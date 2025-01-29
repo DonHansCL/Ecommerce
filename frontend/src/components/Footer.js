@@ -1,58 +1,108 @@
-// src/components/Footer.js
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { FaFacebook, FaTwitter, FaInstagram, FaLinkedin, FaEnvelope, FaPhone, FaMapMarkerAlt } from 'react-icons/fa';
 
 function Footer() {
   return (
-    <footer className="bg-gray-800 text-white py-8 mt-16">
-      <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8">
-        {/* Información de la Empresa */}
-        <div>
-          <h3 className="text-xl font-semibold mb-4">Sobre Nosotros</h3>
-          <p className="text-gray-400">
-            Somos una tienda en línea dedicada a ofrecer productos de alta calidad a precios competitivos. Nuestro compromiso es la satisfacción de nuestros clientes.
-          </p>
-        </div>
-        {/* Enlaces de Navegación */}
-        <div>
-          <h3 className="text-xl font-semibold mb-4">Enlaces Útiles</h3>
-          <ul>
-            <li className="mb-2">
-              <Link to="/" className="text-gray-400 hover:text-white">Inicio</Link>
-            </li>
-            <li className="mb-2">
-              <Link to="/categorias" className="text-gray-400 hover:text-white">Categorías</Link>
-            </li>
-            <li className="mb-2">
-              <Link to="/contacto" className="text-gray-400 hover:text-white">Contacto</Link>
-            </li>
-            <li className="mb-2">
-              <Link to="/terminos" className="text-gray-400 hover:text-white">Términos y Condiciones</Link>
-            </li>
-          </ul>
-        </div>
-        {/* Redes Sociales */}
-        <div>
-          <h3 className="text-xl font-semibold mb-4">Síguenos</h3>
-          <div className="flex space-x-4">
-            <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white">
-              <i className="fab fa-facebook fa-2x"></i>
-            </a>
-            <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white">
-              <i className="fab fa-twitter fa-2x"></i>
-            </a>
-            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white">
-              <i className="fab fa-instagram fa-2x"></i>
-            </a>
-            <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white">
-              <i className="fab fa-linkedin fa-2x"></i>
-            </a>
+    <footer className="bg-gradient-to-b from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {/* About Section */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Sobre Nosotros</h3>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">
+              Somos tu tienda de confianza, ofreciendo los mejores productos con la mejor calidad y servicio.
+            </p>
+            <div className="flex space-x-4">
+              <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" 
+                className="text-gray-400 hover:text-blue-600 transition-colors duration-300">
+                <FaFacebook size={24} />
+              </a>
+              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer"
+                className="text-gray-400 hover:text-blue-400 transition-colors duration-300">
+                <FaTwitter size={24} />
+              </a>
+              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer"
+                className="text-gray-400 hover:text-pink-600 transition-colors duration-300">
+                <FaInstagram size={24} />
+              </a>
+              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer"
+                className="text-gray-400 hover:text-blue-700 transition-colors duration-300">
+                <FaLinkedin size={24} />
+              </a>
+            </div>
+          </div>
+
+          {/* Quick Links */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Enlaces Rápidos</h3>
+            <ul className="space-y-2">
+              <li>
+                <Link to="/" className="text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-300 text-sm">
+                  Inicio
+                </Link>
+              </li>
+              <li>
+                <Link to="/catalog" className="text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-300 text-sm">
+                  Catálogo
+                </Link>
+              </li>
+              <li>
+                <Link to="/orders" className="text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-300 text-sm">
+                  Mis Pedidos
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Customer Service */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Servicio al Cliente</h3>
+            <ul className="space-y-2">
+              <li>
+                <Link to="/faq" className="text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-300 text-sm">
+                  Preguntas Frecuentes
+                </Link>
+              </li>
+              <li>
+                <Link to="/terms" className="text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-300 text-sm">
+                  Términos y Condiciones
+                </Link>
+              </li>
+              <li>
+                <Link to="/privacy" className="text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-300 text-sm">
+                  Política de Privacidad
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Contact Information */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Contáctanos</h3>
+            <ul className="space-y-2">
+              <li className="flex items-center space-x-2">
+                <FaMapMarkerAlt className="text-gray-400" />
+                <span className="text-gray-600 dark:text-gray-400 text-sm">Ciudad, País</span>
+              </li>
+              <li className="flex items-center space-x-2">
+                <FaPhone className="text-gray-400" />
+                <span className="text-gray-600 dark:text-gray-400 text-sm">+1 234 567 890</span>
+              </li>
+              <li className="flex items-center space-x-2">
+                <FaEnvelope className="text-gray-400" />
+                <span className="text-gray-600 dark:text-gray-400 text-sm">contacto@tutienda.com</span>
+              </li>
+            </ul>
           </div>
         </div>
-      </div>
-      {/* Derechos de Autor */}
-      <div className="mt-8 text-center text-gray-500">
-        &copy; {new Date().getFullYear()} Tu Tienda. Todos los derechos reservados.
+
+        {/* Copyright */}
+        <div className="mt-12 pt-8 border-t border-gray-300 dark:border-gray-700">
+          <p className="text-center text-gray-600 dark:text-gray-400 text-sm">
+            © {new Date().getFullYear()} Tu Tienda. Todos los derechos reservados.
+          </p>
+        </div>
       </div>
     </footer>
   );

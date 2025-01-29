@@ -3,10 +3,12 @@ import React, { useState } from 'react';
 import { toast } from 'react-toastify';
 
 function EditCategory({ category, onSuccess, onCancel }) {
-  const [nombre, setNombre] = useState(category.nombre);
-  const [descripcion, setDescripcion] = useState(category.descripcion);
+  const [nombre, setNombre] = useState(category ? category.nombre : '');
+  const [descripcion, setDescripcion] = useState(category ? category.descripcion : '');
   const [imagen, setImagen] = useState(null); // Nuevo estado para la imagen
   const [error, setError] = useState('');
+
+  if (!category) return null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();

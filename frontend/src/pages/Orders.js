@@ -55,7 +55,7 @@ function Orders() {
   };
 
   return (
-    <div className="container mx-auto p-4 bg-gray-50 min-h-screen">
+    <div className="w-full p-4 bg-gray-50 min-h-screen">
       <ToastContainer />
       <h2 className="text-3xl font-bold mb-6 text-center text-indigo-600">Tus Pedidos</h2>
       {loading ? (
@@ -68,16 +68,19 @@ function Orders() {
         <div className="space-y-6">
           {orders.map(order => (
             <div key={order.id} className="bg-white shadow-xl rounded-lg overflow-hidden">
-              <div className="flex justify-between items-center bg-indigo-100 px-6 py-4">
+              {/* Encabezado del Pedido */}
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-indigo-100 px-6 py-4">
                 <div>
                   <h3 className="text-2xl font-semibold text-indigo-700">Pedido #{order.id}</h3>
-                  <p className="text-gray-600">Fecha: {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'N/A'}</p>
+                  <p className="text-gray-600 mt-1">Fecha: {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'N/A'}</p>
                 </div>
-                <span className={`px-3 py-1 rounded-full text-white text-sm ${getStatusColor(order.estado)}`}>
+                <span className={`mt-2 sm:mt-0 px-3 py-1 rounded-full text-white text-sm ${getStatusColor(order.estado)}`}>
                   {order.estado}
                 </span>
               </div>
-              <div className="px-6 py-4">
+
+              {/* Detalles del Pedido */}
+              <div className="px-4 sm:px-6 py-2 sm:py-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="bg-gray-100 p-4 rounded-lg">
                     <p className="text-gray-700"><strong>Dirección de Envío:</strong> {order.direccionEnvio}</p>
@@ -94,7 +97,7 @@ function Orders() {
                   <div className="space-y-4">
                     {order.items && order.items.length > 0 ? (
                       order.items.map(item => (
-                        <div key={item.id} className="flex items-center space-x-4 border-b pb-4">
+                        <div key={item.id} className="flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-4 border-b pb-4">
                           <img
                             src={item.product && item.product.imagenes.length > 0
                               ? `http://localhost:5000/${item.product.imagenes[0]}`

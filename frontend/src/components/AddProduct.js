@@ -3,14 +3,16 @@ import { toast } from 'react-toastify';
 
 function AddProduct({ onSuccess, onCancel }) {
   const [nombre, setNombre] = useState('');
-  const [descripcion, setDescripcion] = useState(''); // Nuevo estado para descripción
+  const [descripcion, setDescripcion] = useState(''); 
   const [precio, setPrecio] = useState('');
   const [cantidadEnStock, setCantidadEnStock] = useState('');
   const [categoriaId, setCategoriaId] = useState('');
   const [categorias, setCategorias] = useState([]);
   const [imagenes, setImagenes] = useState([]);
+  const [featured, setFeatured] = useState(false); 
   const [error, setError] = useState('');
   const [previewImages, setPreviewImages] = useState([]);
+  const [especificaciones, setEspecificaciones] = useState([{ key: '', value: '' }]);
 
   // Obtener las categorías disponibles
   const fetchCategorias = async () => {
@@ -33,10 +35,25 @@ function AddProduct({ onSuccess, onCancel }) {
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
     setImagenes(files);
-
     // Crear URLs de previsualización
     const previews = files.map(file => URL.createObjectURL(file));
     setPreviewImages(previews);
+  };
+
+  const handleAddSpecification = () => {
+    setEspecificaciones([...especificaciones, { key: '', value: '' }]);
+  };
+
+  const handleSpecificationChange = (index, field, value) => {
+    const newSpecs = [...especificaciones];
+    newSpecs[index][field] = value;
+    setEspecificaciones(newSpecs);
+  };
+
+  const handleRemoveSpecification = (index) => {
+    const newSpecs = [...especificaciones];
+    newSpecs.splice(index, 1);
+    setEspecificaciones(newSpecs);
   };
 
   const handleSubmit = async (e) => {
@@ -59,12 +76,23 @@ function AddProduct({ onSuccess, onCancel }) {
       return;
     }
 
+     // Filtrar especificaciones válidas
+     const filteredSpecs = especificaciones.reduce((acc, spec) => {
+      if (spec.key && spec.value) {
+        acc[spec.key] = spec.value;
+      }
+      return acc;
+    }, {});
+
     const formData = new FormData();
     formData.append('nombre', nombre);
     formData.append('descripcion', descripcion); // Usar el estado de descripción
     formData.append('precio', parseFloat(precio));
     formData.append('cantidadEnStock', parseInt(cantidadEnStock));
     formData.append('categoriaId', parseInt(categoriaId));
+    formData.append('especificaciones', JSON.stringify(filteredSpecs));
+    formData.append('featured', featured);
+
     for (let i = 0; i < imagenes.length; i++) {
       formData.append('imagenes', imagenes[i]);
     }
@@ -91,85 +119,128 @@ function AddProduct({ onSuccess, onCancel }) {
   };
 
 
-
-
   return (
-    <div className="border p-4 rounded">
-      <h3 className="text-lg font-semibold mb-4">Añadir Nuevo Producto</h3>
+    <div className="bg-white p-6 rounded shadow-md">
+      <h2 className="text-2xl font-semibold mb-4">Añadir Nuevo Producto</h2>
       {error && <div className="text-red-500 mb-4">{error}</div>}
-      <form onSubmit={handleSubmit} className="space-y-4" encType="multipart/form-data">
-        <div>
-          <label className="block">Nombre:</label>
+      <form onSubmit={handleSubmit} encType="multipart/form-data">
+        {/* Campos de Producto */}
+        <div className="mb-4">
+          <label className="block text-gray-700">Nombre:</label>
           <input
             type="text"
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
+            className="w-full p-2 border border-gray-300 rounded"
             required
-            className="w-full border p-2"
           />
         </div>
-        <div>
-          <label className="block">Descripción:</label>
+        <div className="mb-4">
+          <label className="block text-gray-700">Descripción:</label>
           <textarea
-            value={descripcion} // Usar el estado de descripción
-            onChange={(e) => setDescripcion(e.target.value)} // Manejador de cambio
-            required
-            className="w-full border p-2"
-          />
+            value={descripcion}
+            onChange={(e) => setDescripcion(e.target.value)}
+            className="w-full p-2 border border-gray-300 rounded"
+          ></textarea>
         </div>
-        <div>
-          <label className="block">Precio:</label>
+        <div className="mb-4">
+          <label className="block text-gray-700">Precio:</label>
           <input
             type="number"
-            step="0.01"
             value={precio}
             onChange={(e) => setPrecio(e.target.value)}
+            className="w-full p-2 border border-gray-300 rounded"
             required
-            className="w-full border p-2"
           />
         </div>
-        <div>
-          <label className="block">Cantidad en Stock:</label>
+        <div className="mb-4">
+          <label className="block text-gray-700">Cantidad en Stock:</label>
           <input
             type="number"
             value={cantidadEnStock}
             onChange={(e) => setCantidadEnStock(e.target.value)}
+            className="w-full p-2 border border-gray-300 rounded"
             required
-            className="w-full border p-2"
           />
         </div>
-        <div>
-          <label className="block">Categoría:</label>
+        <div className="mb-4">
+          <label className="block text-gray-700">Categoría:</label>
           <select
             value={categoriaId}
             onChange={(e) => setCategoriaId(e.target.value)}
+            className="w-full p-2 border border-gray-300 rounded"
             required
-            className="w-full border p-2"
           >
-            <option value="">Selecciona una categoría</option>
+            <option value="">Selecciona una Categoría</option>
             {categorias.map(cat => (
               <option key={cat.id} value={cat.id}>{cat.nombre}</option>
             ))}
           </select>
         </div>
-        <div>
-          <label className="block">Imágenes:</label>
+        <div className="mb-4">
+          <label className="inline-flex items-center">
+            <input
+              type="checkbox"
+              checked={featured}
+              onChange={(e) => setFeatured(e.target.checked)}
+              className="form-checkbox h-5 w-5 text-indigo-600"
+            />
+            <span className="ml-2 text-gray-700">Producto Destacado</span>
+          </label>
+        </div>
+
+        {/* Especificaciones del Producto */}
+        <div className="mb-4">
+          <label className="block text-gray-700">Especificaciones:</label>
+          {especificaciones.map((spec, index) => (
+            <div key={index} className="flex items-center mb-2">
+              <input
+                type="text"
+                placeholder="Clave"
+                value={spec.key}
+                onChange={(e) => handleSpecificationChange(index, 'key', e.target.value)}
+                className="w-1/2 p-2 border border-gray-300 rounded mr-2"
+              />
+              <input
+                type="text"
+                placeholder="Valor"
+                value={spec.value}
+                onChange={(e) => handleSpecificationChange(index, 'value', e.target.value)}
+                className="w-1/2 p-2 border border-gray-300 rounded mr-2"
+              />
+              {especificaciones.length > 1 && (
+                <button type="button" onClick={() => handleRemoveSpecification(index)} className="text-red-500">
+                  X
+                </button>
+              )}
+            </div>
+          ))}
+          <button type="button" onClick={handleAddSpecification} className="mt-2 bg-blue-500 text-white px-3 py-1 rounded">
+            Añadir Especificación
+          </button>
+        </div>
+
+        {/* Subir Imágenes */}
+        <div className="mb-4">
+          <label className="block text-gray-700">Imágenes:</label>
           <input
             type="file"
             multiple
             accept="image/*"
             onChange={handleImageChange}
-            className="w-full border p-2"
+            className="w-full"
           />
         </div>
         {/* Previsualización de Imágenes */}
-      <div className="flex flex-wrap gap-2 mt-2">
-        {previewImages.map((src, index) => (
-          <img key={index} src={src} alt={`Preview ${index}`} className="w-16 h-16 object-cover" />
-        ))}
-      </div>
-        <div className="flex justify-end space-x-2">
-          <button type="button" onClick={onCancel} className="bg-gray-500 text-white px-4 py-2 rounded">
+        <div className="mb-4 flex flex-wrap">
+          {previewImages.map((src, index) => (
+            <img key={index} src={src} alt={`Preview ${index}`} className="w-24 h-24 object-cover mr-2 mb-2" />
+          ))}
+        </div>
+
+        {/* Botones */}
+        <div className="flex justify-end">
+          <button type="button" onClick={onCancel} className="mr-4 bg-gray-500 text-white px-4 py-2 rounded">
             Cancelar
           </button>
           <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded">
@@ -180,5 +251,6 @@ function AddProduct({ onSuccess, onCancel }) {
     </div>
   );
 }
+
 
 export default AddProduct;

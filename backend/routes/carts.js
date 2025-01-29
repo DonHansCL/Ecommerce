@@ -13,6 +13,47 @@ const decodeToken = (token) => {
   }
 };
 
+
+/**
+ * @swagger
+ * tags:
+ *   name: Carts
+ *   description: Operaciones relacionadas con Carritos
+ */
+
+/**
+ * @swagger
+ * /carts:
+ *   get:
+ *     summary: Obtener el carrito del usuario
+ *     tags: [Carts]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Detalles del carrito
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 cartItems:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                       cantidad:
+ *                         type: integer
+ *                       product:
+ *                         $ref: '#/components/schemas/Product'
+ *       500:
+ *         description: Error al obtener el carrito
+ */
+
+
+
 // Obtener el Carrito del Usuario (Requiere Autenticación)
 router.get('/', authMiddleware, async (req, res) => {
   try {
@@ -34,6 +75,60 @@ router.get('/', authMiddleware, async (req, res) => {
     res.status(500).json({ error: 'Error al obtener el carrito' });
   }
 });
+
+
+/**
+ * @swagger
+ * /carts/add:
+ *   post:
+ *     summary: Agregar un producto al carrito
+ *     tags: [Carts]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - productoId
+ *               - cantidad
+ *             properties:
+ *               productoId:
+ *                 type: integer
+ *                 description: ID del producto a agregar
+ *               cantidad:
+ *                 type: integer
+ *                 description: Cantidad del producto
+ *     responses:
+ *       200:
+ *         description: Producto agregado al carrito
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 cartItem:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                     carritoId:
+ *                       type: integer
+ *                     productoId:
+ *                       type: integer
+ *                     cantidad:
+ *                       type: integer
+ *       400:
+ *         description: Producto o cantidad inválida
+ *       500:
+ *         description: Error al agregar al carrito
+ */
+
+
 
 // Agregar un Producto al Carrito
 router.post('/add', authMiddleware, async (req, res) => {
@@ -75,6 +170,58 @@ router.post('/add', authMiddleware, async (req, res) => {
 });
 
 
+
+/**
+ * @swagger
+ * /carts/update:
+ *   put:
+ *     summary: Actualizar la cantidad de un producto en el carrito
+ *     tags: [Carts]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - productoId
+ *               - cantidad
+ *             properties:
+ *               productoId:
+ *                 type: integer
+ *                 description: ID del producto a actualizar
+ *               cantidad:
+ *                 type: integer
+ *                 description: Nueva cantidad del producto
+ *     responses:
+ *       200:
+ *         description: Cantidad actualizada
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 cartItem:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                     cantidad:
+ *                       type: integer
+ *       400:
+ *         description: Producto o cantidad inválida
+ *       404:
+ *         description: Producto no encontrado en el carrito
+ *       500:
+ *         description: Error al actualizar la cantidad
+ */
+
+
+
 // Actualizar la Cantidad de un Producto en el Carrito (Requiere Autenticación)
 router.put('/update', authMiddleware, async (req, res) => {
   const { productoId, cantidad } = req.body;
@@ -112,6 +259,33 @@ router.put('/update', authMiddleware, async (req, res) => {
 });
 
 
+
+/**
+ * @swagger
+ * /carts/remove/{productoId}:
+ *   delete:
+ *     summary: Eliminar un producto del carrito
+ *     tags: [Carts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: productoId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID del producto a eliminar
+ *     responses:
+ *       200:
+ *         description: Producto eliminado del carrito
+ *       404:
+ *         description: Producto no encontrado en el carrito
+ *       500:
+ *         description: Error al eliminar el producto
+ */
+
+
+
 // Eliminar un Producto del Carrito (Requiere Autenticación)
 router.delete('/remove/:productoId', authMiddleware, async (req, res) => {
   const { productoId } = req.params;
@@ -139,6 +313,24 @@ router.delete('/remove/:productoId', authMiddleware, async (req, res) => {
     res.status(500).json({ error: 'Error al eliminar el producto del carrito' });
   }
 });
+
+
+/**
+ * @swagger
+ * /carts/clear:
+ *   post:
+ *     summary: Limpiar el carrito completo
+ *     tags: [Carts]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Carrito limpiado exitosamente
+ *       500:
+ *         description: Error al limpiar el carrito
+ */
+
+
 
 // Limpiar el Carrito (Requiere Autenticación)
 router.post('/clear', authMiddleware, async (req, res) => {

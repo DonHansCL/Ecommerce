@@ -16,6 +16,10 @@ module.exports = (sequelize) => {
       type: DataTypes.TEXT,
       allowNull: true,
     },
+    especificaciones: {
+      type: DataTypes.JSON, 
+      allowNull: true,
+    },
     precio: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
@@ -40,6 +44,7 @@ module.exports = (sequelize) => {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
     },
+    
   }, {
     tableName: 'Productos',
     timestamps: false,

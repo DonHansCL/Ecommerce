@@ -7,6 +7,7 @@ import Testimonials from '../components/Testimonials';
 import About from '../components/About';
 import Promotions from '../components/Promotions';
 import Footer from '../components/Footer';
+import Features from '../components/Features';
 
 function Home() {
   return (
@@ -14,9 +15,9 @@ function Home() {
       <Banner />
       <Categories />
       <FeaturedProducts />
-      <Promotions />
+      {/* <Promotions /> */}
       <Testimonials />
-      <About />
+      <Features />
       <Footer/>
     </div>
   );

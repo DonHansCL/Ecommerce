@@ -1,129 +1,97 @@
-// src/components/AdminProductsList.js
-import React, { useEffect, useState } from 'react';
-import AddProduct from './AddProduct';
-import EditProduct from './EditProduct';
-import { toast } from 'react-toastify';
+import React from 'react';
+import { FiEdit, FiTrash2 } from 'react-icons/fi';
 
-function AdminProductsList() {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [isAdding, setIsAdding] = useState(false);
-  const [editingProduct, setEditingProduct] = useState(null);
-
-  const fetchProducts = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const res = await fetch('http://localhost:5000/api/products');
-      if (!res.ok) {
-        throw new Error('No se pudieron cargar los productos.');
-      }
-      const data = await res.json();
-      setProducts(data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchProducts();
-  }, []);
-
-  const handleDelete = async (id) => {
-    if (!window.confirm('¿Estás seguro de que deseas eliminar este producto?')) return;
-
-    try {
-      const res = await fetch(`http://localhost:5000/api/products/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
-      const data = await res.json();
-      if (res.ok) {
-        toast.success('Producto eliminado exitosamente.');
-        fetchProducts();
-      } else {
-        toast.error(data.error || 'Error al eliminar el producto.');
-      }
-    } catch (err) {
-      toast.error('Error al eliminar el producto.');
-    }
+function AdminProductsList({ products, onEdit, onDelete }) {
+  const renderSpecifications = (specs) => {
+    if (!specs || Object.keys(specs).length === 0) return 'N/A';
+    
+    return (
+      <div className="space-y-1">
+        {Object.entries(specs).map(([key, value]) => (
+          <div key={key} className="flex items-center text-sm">
+            <span className="font-medium text-gray-600 min-w-[100px]">{key}:</span>
+            <span className="text-gray-800">{value}</span>
+          </div>
+        ))}
+      </div>
+    );
   };
 
   return (
-    <div>
-      <button
-        onClick={() => setIsAdding(true)}
-        className="mb-4 bg-green-500 text-white px-4 py-2 rounded"
-      >
-        Añadir Nuevo Producto
-      </button>
-      {isAdding && (
-        <AddProduct
-          onSuccess={() => { setIsAdding(false); fetchProducts(); }}
-          onCancel={() => setIsAdding(false)}
-        />
-      )}
-      {editingProduct && (
-        <EditProduct
-          product={editingProduct}
-          onSuccess={() => { setEditingProduct(null); fetchProducts(); }}
-          onCancel={() => setEditingProduct(null)}
-        />
-      )}
-      {loading ? (
-        <div>Cargando productos...</div>
-      ) : error ? (
-        <div className="text-red-500">{error}</div>
-      ) : (
-        <table className="min-w-full bg-white">
-          <thead>
+    <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
             <tr>
-              <th className="py-2">ID</th>
-              <th className="py-2">Nombre</th>
-              <th className="py-2">Precio</th>
-              <th className="py-2">Stock</th>
-              <th className="py-2">Categoría</th>
-              <th className="py-2">Acciones</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Producto
+              </th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Detalles
+              </th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Especificaciones
+              </th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Acciones
+              </th>
             </tr>
           </thead>
-          <tbody>
-            {products.length > 0 ? (
-              products.map(product => (
-                <tr key={product.id} className="text-center border-t">
-                  <td className="py-2">{product.id}</td>
-                  <td className="py-2">{product.nombre}</td>
-                  <td className="py-2">${product.precio}</td>
-                  <td className="py-2">{product.cantidadEnStock}</td>
-                  <td className="py-2">{product.Categoria ? product.Categoria.nombre : 'N/A'}</td>
-                  <td className="py-2">
+          <tbody className="bg-white divide-y divide-gray-200">
+            {products.map((product) => (
+              <tr key={product.id} className="hover:bg-gray-50">
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center">
+                    <div className="h-16 w-16 flex-shrink-0">
+                      <img
+                        className="h-16 w-16 rounded-lg object-cover"
+                        src={`http://localhost:5000/${product.imagenes?.[0] || 'default.jpg'}`}
+                        alt={product.nombre}
+                      />
+                    </div>
+                    <div className="ml-4">
+                      <div className="text-sm font-medium text-gray-900">{product.nombre}</div>
+                      <div className="text-sm text-gray-500">ID: {product.id}</div>
+                    </div>
+                  </div>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="text-sm text-gray-900">
+                    <div>Precio: ${product.precio}</div>
+                    <div>Stock: {product.cantidadEnStock}</div>
+                    <div className="text-sm text-gray-500">
+                      Categoría: {product.Category?.nombre || 'N/A'}
+                    </div>
+                  </div>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="max-w-xs overflow-hidden">
+                    {renderSpecifications(product.especificaciones)}
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <div className="flex space-x-3">
                     <button
-                      onClick={() => setEditingProduct(product)}
-                      className="mr-2 bg-blue-500 text-white px-2 py-1 rounded"
+                      onClick={() => onEdit(product)}
+                      className="text-indigo-600 hover:text-indigo-900 flex items-center"
                     >
+                      <FiEdit className="w-4 h-4 mr-1" />
                       Editar
                     </button>
                     <button
-                      onClick={() => handleDelete(product.id)}
-                      className="bg-red-500 text-white px-2 py-1 rounded"
+                      onClick={() => onDelete(product.id)}
+                      className="text-red-600 hover:text-red-900 flex items-center"
                     >
+                      <FiTrash2 className="w-4 h-4 mr-1" />
                       Eliminar
                     </button>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="6" className="py-4">No hay productos disponibles.</td>
+                  </div>
+                </td>
               </tr>
-            )}
+            ))}
           </tbody>
         </table>
-      )}
+      </div>
     </div>
   );
 }

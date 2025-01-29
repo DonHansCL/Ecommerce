@@ -30,8 +30,7 @@ module.exports = (sequelize) => {
       allowNull: false,
     },
     estado: {
-      type: DataTypes.STRING,
-      defaultValue: 'pendiente',
+      type: DataTypes.ENUM(['pendiente', 'enviado', 'entregado', 'cancelado']),
       allowNull: false,
     },
   }, {

@@ -24,6 +24,14 @@ module.exports = (sequelize) => {
       type: DataTypes.STRING,
       allowNull: false,
     },
+    telefono: { // New Field
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    direccion: { // New Field
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
     rol: {
       type: DataTypes.ENUM('cliente', 'administrador', 'cliente_bloqueado'),
       defaultValue: 'cliente',

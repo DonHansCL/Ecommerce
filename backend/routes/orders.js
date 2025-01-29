@@ -5,6 +5,58 @@ const { Cart, CartItem, Order, Product, User, OrderItem, sequelize } = require('
 const router = express.Router();
 
 
+
+/**
+ * @swagger
+ * tags:
+ *   name: Orders
+ *   description: Operaciones relacionadas con Pedidos
+ */
+
+/**
+ * @swagger
+ * /orders/checkout:
+ *   post:
+ *     summary: Realizar checkout y crear un pedido
+ *     tags: [Orders]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - direccionEnvio
+ *               - metodoPago
+ *             properties:
+ *               direccionEnvio:
+ *                 type: string
+ *                 description: Dirección de envío
+ *               metodoPago:
+ *                 type: string
+ *                 description: Método de pago (ej. tarjeta, paypal)
+ *     responses:
+ *       201:
+ *         description: Pedido creado exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 order:
+ *                   $ref: '#/components/schemas/Order'
+ *       400:
+ *         description: Carrito vacío o datos inválidos
+ *       500:
+ *         description: Error al procesar el pedido
+ */
+
+
+
 // Realizar Checkout y Crear Pedido
 router.post('/checkout', authMiddleware, async (req, res) => {
   const { direccionEnvio, metodoPago } = req.body;
@@ -38,7 +90,7 @@ router.post('/checkout', authMiddleware, async (req, res) => {
 
     console.log('Total calculated:', total);
 
-    // 3. Create order
+    // 3. Crear pedido
     const order = await Order.create({
       usuarioId: req.user.id,
       total: total,
@@ -49,7 +101,7 @@ router.post('/checkout', authMiddleware, async (req, res) => {
 
     console.log('Order created:', order.toJSON());
 
-    // 4. Create order items
+    // 4. Crear ítems del pedido
     for (const cartItem of cart.CartItems) {
       console.log('Creating OrderItem for product:', cartItem.product.id);
       await OrderItem.create({
@@ -60,18 +112,30 @@ router.post('/checkout', authMiddleware, async (req, res) => {
       }, { transaction: t });
     }
 
-    // 5. Clear cart
+    // 5. Limpiar carrito
     await CartItem.destroy({
       where: { carritoId: cart.id },
       transaction: t
     });
 
-    // 6. Commit transaction
+    // 6. Confirmar transacción
     await t.commit();
+
+    // 7. Obtener el pedido con sus ítems para enviarlo al frontend
+    const createdOrder = await Order.findOne({
+      where: { id: order.id },
+      include: [{
+        model: OrderItem,
+        as: 'items',
+        include: [{ model: Product, as: 'product' }]
+      }],
+    });
+
+    console.log('Created Order with Items:', JSON.stringify(createdOrder, null, 2));
 
     res.status(201).json({
       message: 'Pedido creado exitosamente',
-      order: order
+      order: createdOrder
     });
 
   } catch (error) {
@@ -85,13 +149,37 @@ router.post('/checkout', authMiddleware, async (req, res) => {
 });
 
 
+
+/**
+ * @swagger
+ * /orders:
+ *   get:
+ *     summary: Obtener historial de pedidos
+ *     tags: [Orders]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de pedidos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Order'
+ *       403:
+ *         description: Acceso denegado
+ *       500:
+ *         description: Error al obtener los pedidos
+ */
+
+
+
 // Obtener Historial de Pedidos del Usuario o Todos si es Admin
 router.get('/', authMiddleware, async (req, res) => {
   try {
-    const isAdmin = req.user.rol === 'administrador';
-
     const orders = await Order.findAll({
-      where: isAdmin ? {} : { usuarioId: req.user.id },
+      where: { usuarioId: req.user.id },
       include: [
         {
           model: User,
@@ -115,6 +203,76 @@ router.get('/', authMiddleware, async (req, res) => {
     console.error('Error al obtener los pedidos:', error);
     res.status(500).json({ 
       error: 'Error al obtener los pedidos', 
+      details: error.message 
+    });
+  }
+});
+
+
+/**
+ * Obtener Todos los Pedidos (Solo para Administradores)
+ */
+router.get('/all', authMiddleware, async (req, res) => {
+  try {
+    // Verificar si el usuario es administrador
+    if (req.user.rol !== 'administrador') {
+      return res.status(403).json({ error: 'Acceso denegado.' });
+    }
+
+    const orders = await Order.findAll({
+      include: [
+        {
+          model: User,
+          attributes: ['nombre', 'correo']
+        },
+        {
+          model: OrderItem,
+          as: 'items',
+          include: [{
+            model: Product,
+            as: 'product',
+            attributes: ['id', 'nombre', 'precio', 'imagenes']
+          }]
+        }
+      ],
+      order: [['id', 'DESC']]
+    });
+
+    res.json(orders);
+  } catch (error) {
+    console.error('Error al obtener todos los pedidos:', error);
+    res.status(500).json({ 
+      error: 'Error al obtener todos los pedidos', 
+      details: error.message 
+    });
+  }
+});
+
+
+router.put('/:id/status', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { estado } = req.body;
+
+    // Validate status
+    const validStatus = ['pendiente', 'enviado', 'entregado', 'cancelado'];
+    if (!validStatus.includes(estado.toLowerCase())) {
+      return res.status(400).json({ error: 'Estado no válido' });
+    }
+
+    const order = await Order.findByPk(id);
+    if (!order) {
+      return res.status(404).json({ error: 'Pedido no encontrado' });
+    }
+
+    order.estado = estado.toLowerCase();
+    await order.save();
+
+    res.json(order);
+  } catch (error) {
+    console.error('Error al actualizar el estado:', error);
+    res.status(500).json({ 
+      error: 'Error al actualizar el estado',
       details: error.message 
     });
   }

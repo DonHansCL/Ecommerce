@@ -1,5 +1,5 @@
 // src/context/AuthContext.js
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useState, useEffect } from 'react';
 //import { CartContext } from './CartContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';

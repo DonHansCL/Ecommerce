@@ -5,13 +5,27 @@ const { Category } = require('../models');
 const authMiddleware = require('../middlewares/authMiddleware');
 const router = express.Router();
 
+
+
+/**
+ * @swagger
+ * tags:
+ *   name: Categories
+ *   description: Operaciones relacionadas con Categorías
+ */
+
+
 // Configuración de Multer para manejar imágenes de categorías
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/categories/'); // Carpeta donde se guardarán las imágenes de categorías
+    const uploadPath = path.join(__dirname, '..', 'uploads', 'categories');
+    // Create directory if it doesn't exist
+    if (!fs.existsSync(uploadPath)) {
+      fs.mkdirSync(uploadPath, { recursive: true });
+    }
+    cb(null, uploadPath);
   },
   filename: (req, file, cb) => {
-    // Nombre único para evitar conflictos
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     cb(null, uniqueSuffix + path.extname(file.originalname));
   }
@@ -28,6 +42,28 @@ const fileFilter = (req, file, cb) => {
 
 const upload = multer({ storage, fileFilter });
 
+
+
+/**
+ * @swagger
+ * /categories:
+ *   get:
+ *     summary: Obtener todas las categorías
+ *     tags: [Categories]
+ *     responses:
+ *       200:
+ *         description: Lista de categorías
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Category'
+ *       500:
+ *         description: Error al obtener las categorías
+ */
+
+
 // Obtener Todas las Categorías
 router.get('/', async (req, res) => {
   try {
@@ -41,6 +77,52 @@ router.get('/', async (req, res) => {
     });
   }
 });
+
+
+
+/**
+ * @swagger
+ * /categories:
+ *   post:
+ *     summary: Crear una nueva categoría (Solo Administradores)
+ *     tags: [Categories]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - nombre
+ *             properties:
+ *               nombre:
+ *                 type: string
+ *                 description: Nombre de la categoría
+ *               descripcion:
+ *                 type: string
+ *                 description: Descripción de la categoría
+ *               imagen:
+ *                 type: string
+ *                 format: binary
+ *                 description: Imagen de la categoría
+ *     responses:
+ *       201:
+ *         description: Categoría creada exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Category'
+ *       403:
+ *         description: Acceso denegado
+ *       400:
+ *         description: Error de validación
+ *       500:
+ *         description: Error al crear la categoría
+ */
+
+
 
 // Crear una Nueva Categoría (Requiere Autenticación de Administrador)
 router.post('/', authMiddleware, upload.single('imagen'), async (req, res) => {
@@ -66,6 +148,59 @@ router.post('/', authMiddleware, upload.single('imagen'), async (req, res) => {
     });
   }
 });
+
+
+
+/**
+ * @swagger
+ * /categories/{id}:
+ *   put:
+ *     summary: Actualizar una categoría existente (Solo Administradores)
+ *     tags: [Categories]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID de la categoría a actualizar
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               nombre:
+ *                 type: string
+ *                 description: Nombre de la categoría
+ *               descripcion:
+ *                 type: string
+ *                 description: Descripción de la categoría
+ *               imagen:
+ *                 type: string
+ *                 format: binary
+ *                 description: Nueva imagen de la categoría
+ *     responses:
+ *       200:
+ *         description: Categoría actualizada exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Category'
+ *       403:
+ *         description: Acceso denegado
+ *       404:
+ *         description: Categoría no encontrada
+ *       400:
+ *         description: Error de validación
+ *       500:
+ *         description: Error al actualizar la categoría
+ */
+
+
 
 // Actualizar una Categoría (Requiere Autenticación de Administrador)
 router.put('/:id', authMiddleware, upload.single('imagen'), async (req, res) => {
@@ -100,6 +235,34 @@ router.put('/:id', authMiddleware, upload.single('imagen'), async (req, res) => 
     });
   }
 });
+
+
+/**
+ * @swagger
+ * /categories/{id}:
+ *   delete:
+ *     summary: Eliminar una categoría existente (Solo Administradores)
+ *     tags: [Categories]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID de la categoría a eliminar
+ *     responses:
+ *       200:
+ *         description: Categoría eliminada exitosamente
+ *       403:
+ *         description: Acceso denegado
+ *       404:
+ *         description: Categoría no encontrada
+ *       500:
+ *         description: Error al eliminar la categoría
+ */
+
 
 // Eliminar una Categoría (Requiere Autenticación de Administrador)
 router.delete('/:id', authMiddleware, async (req, res) => {

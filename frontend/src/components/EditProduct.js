@@ -3,6 +3,8 @@ import { toast } from 'react-toastify';
 
 function EditProduct({ product, onSuccess, onCancel }) {
   const [nombre, setNombre] = useState(product.nombre);
+  const [descripcion, setDescripcion] = useState(product.descripcion);
+  const [featured, setFeatured] = useState(product.featured || false);
   const [precio, setPrecio] = useState(product.precio);
   const [cantidadEnStock, setCantidadEnStock] = useState(product.cantidadEnStock);
   const [categoriaId, setCategoriaId] = useState(product.categoriaId);
@@ -11,19 +13,20 @@ function EditProduct({ product, onSuccess, onCancel }) {
   const [error, setError] = useState('');
   const [imagenesExistentes, setImagenesExistentes] = useState(product.imagenes || []);
   const [imagenesAEliminar, setImagenesAEliminar] = useState([]);
-  const [descripcion, setDescripcion] = useState(product.descripcion);
+  const [especificaciones, setEspecificaciones] = useState(
+    product.especificaciones
+      ? Object.entries(product.especificaciones).map(([key, value]) => ({ key, value }))
+      : [{ key: '', value: '' }]
+  );
 
   // Obtener las categorías disponibles
   const fetchCategorias = async () => {
     try {
-      const res = await fetch(`${process.env.REACT_APP_API_URL}/api/categories`);
-      if (!res.ok) {
-        throw new Error('No se pudieron cargar las categorías.');
-      }
+      const res = await fetch('http://localhost:5000/api/categories');
       const data = await res.json();
       setCategorias(data);
     } catch (err) {
-      setError(err.message);
+      setError('Error al cargar las categorías.');
     }
   };
 
@@ -32,7 +35,8 @@ function EditProduct({ product, onSuccess, onCancel }) {
   }, []);
 
   const handleImageChange = (e) => {
-    setNuevasImagenes(e.target.files);
+    const files = Array.from(e.target.files);
+    setNuevasImagenes(files);
   };
 
   const handleEliminarImagen = (imagenPath) => {
@@ -40,177 +44,222 @@ function EditProduct({ product, onSuccess, onCancel }) {
     setImagenesExistentes(imagenesExistentes.filter(img => img !== imagenPath));
   };
 
+  const handleAddSpecification = () => {
+    setEspecificaciones([...especificaciones, { key: '', value: '' }]);
+  };
+
+  const handleSpecificationChange = (index, field, value) => {
+    const newSpecs = [...especificaciones];
+    newSpecs[index][field] = value;
+    setEspecificaciones(newSpecs);
+  };
+
+  const handleRemoveSpecification = (index) => {
+    const newSpecs = [...especificaciones];
+    newSpecs.splice(index, 1);
+    setEspecificaciones(newSpecs);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-
-    // Validaciones básicas
     if (!nombre || !precio || !cantidadEnStock || !categoriaId) {
-      setError('Todos los campos son requeridos.');
+      setError('Por favor, completa todos los campos obligatorios.');
       return;
     }
 
-    if (isNaN(precio) || parseFloat(precio) <= 0) {
-      setError('El precio debe ser un número positivo.');
-      return;
-    }
-
-    if (!Number.isInteger(parseFloat(cantidadEnStock)) || parseInt(cantidadEnStock) < 0) {
-      setError('La cantidad en stock debe ser un número entero no negativo.');
-      return;
-    }
+    // Filtrar especificaciones válidas y convertir a objeto
+    const filteredSpecs = especificaciones.reduce((acc, spec) => {
+      if (spec.key && spec.value) {
+        acc[spec.key] = spec.value;
+      }
+      return acc;
+    }, {});
 
     const formData = new FormData();
     formData.append('nombre', nombre);
     formData.append('descripcion', descripcion);
-    formData.append('precio', parseFloat(precio));
-    formData.append('cantidadEnStock', parseInt(cantidadEnStock));
-    formData.append('categoriaId', parseInt(categoriaId));
-
-    // Agregar nuevas imágenes
-    for (let i = 0; i < nuevasImagenes.length; i++) {
-      formData.append('imagenes', nuevasImagenes[i]);
-    }
-
-    // Agregar imágenes a eliminar
-    imagenesAEliminar.forEach(imgPath => {
-      formData.append('imagenesAEliminar', imgPath);
+    formData.append('precio', precio);
+    formData.append('cantidadEnStock', cantidadEnStock);
+    formData.append('categoriaId', categoriaId);
+    formData.append('especificaciones', JSON.stringify(filteredSpecs)); // Enviar como string JSON
+    formData.append('featured', featured);
+    formData.append('imagenesAEliminar', JSON.stringify(imagenesAEliminar)); // Enviar imágenes a eliminar
+    nuevasImagenes.forEach(img => {
+      formData.append('imagenes', img);
     });
 
-
     try {
-      const res = await fetch(`${process.env.REACT_APP_API_URL}/api/products/${product.id}`, {
+      const res = await fetch(`http://localhost:5000/api/products/${product.id}`, {
         method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
         body: formData,
+        headers: {
+          // No se debe establecer 'Content-Type' cuando se usa FormData
+          // el navegador lo hace automáticamente
+          'Authorization': `Bearer ${localStorage.getItem('token')}`, // Asegúrate de manejar el token adecuadamente
+        },
       });
-      const data = await res.json();
-      if (res.ok) {
-        toast.success('Producto actualizado exitosamente.');
-        onSuccess();
-      } else {
-        toast.error(data.error || 'Error al actualizar el producto.');
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        setError(errorData.error || 'Error al actualizar el producto.');
+        toast.error(errorData.error || 'Error al actualizar el producto.');
+        return;
       }
+  
+      const data = await res.json();
+      toast.success('Producto editado exitosamente.');
+      onSuccess();
     } catch (err) {
-      setError('Error al actualizar el producto.');
+      setError(err.message);
+      toast.error(err.message);
     }
   };
+  
 
   return (
-    <div className="border p-4 rounded">
-      <h3 className="text-lg font-semibold mb-4">Editar Producto</h3>
+    <div className="bg-white p-6 rounded shadow-md">
+      <h2 className="text-2xl font-semibold mb-4">Editar Producto</h2>
       {error && <div className="text-red-500 mb-4">{error}</div>}
-      <form onSubmit={handleSubmit} className="space-y-4" encType="multipart/form-data">
-        <div>
-          <label className="block">Nombre:</label>
+      <form onSubmit={handleSubmit} encType="multipart/form-data">
+        {/* Campos de Producto */}
+        <div className="mb-4">
+          <label className="block text-gray-700">Nombre:</label>
           <input
             type="text"
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
+            className="w-full p-2 border border-gray-300 rounded"
             required
-            className="w-full border p-2"
           />
         </div>
-        <div>
-          <label className="block">Descripción:</label>
+        <div className="mb-4">
+          <label className="block text-gray-700">Descripción:</label>
           <textarea
             value={descripcion}
             onChange={(e) => setDescripcion(e.target.value)}
-            required
-            className="w-full border p-2"
-          />
+            className="w-full p-2 border border-gray-300 rounded"
+          ></textarea>
         </div>
-        <div>
-          <label className="block">Precio:</label>
+        <div className="mb-4">
+          <label className="block text-gray-700">Precio:</label>
           <input
             type="number"
-            step="0.01"
             value={precio}
             onChange={(e) => setPrecio(e.target.value)}
+            className="w-full p-2 border border-gray-300 rounded"
             required
-            className="w-full border p-2"
           />
         </div>
-        <div>
-          <label className="block">Cantidad en Stock:</label>
+        <div className="mb-4">
+          <label className="block text-gray-700">Cantidad en Stock:</label>
           <input
             type="number"
             value={cantidadEnStock}
             onChange={(e) => setCantidadEnStock(e.target.value)}
+            className="w-full p-2 border border-gray-300 rounded"
             required
-            className="w-full border p-2"
           />
         </div>
-        <div>
-          <label className="block">Categoría:</label>
+        <div className="mb-4">
+          <label className="block text-gray-700">Categoría:</label>
           <select
             value={categoriaId}
             onChange={(e) => setCategoriaId(e.target.value)}
+            className="w-full p-2 border border-gray-300 rounded"
             required
-            className="w-full border p-2"
           >
-            <option value="">Selecciona una categoría</option>
+            <option value="">Selecciona una Categoría</option>
             {categorias.map(cat => (
               <option key={cat.id} value={cat.id}>{cat.nombre}</option>
             ))}
           </select>
         </div>
-        <div>
-          <label className="block">Imagenes Existentes:</label>
-          <div className="flex flex-wrap gap-2 mt-2">
-            {imagenesExistentes.length > 0 ? (
-              imagenesExistentes.map((imgPath, index) => (
-                <div key={index} className="relative">
-                  <img
-                    src={`${process.env.REACT_APP_API_URL}/${imgPath}`}
-                    alt={`Imagen ${index + 1}`}
-                    className="w-24 h-24 object-cover rounded"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleEliminarImagen(imgPath)}
-                    className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1"
-                  >
-                    &times;
-                  </button>
-                </div>
-              ))
-            ) : (
-              <p>No hay imágenes existentes.</p>
-            )}
-          </div>
+        <div className="mb-4">
+          <label className="inline-flex items-center">
+            <input
+              type="checkbox"
+              checked={featured}
+              onChange={(e) => setFeatured(e.target.checked)}
+              className="form-checkbox h-5 w-5 text-indigo-600"
+            />
+            <span className="ml-2 text-gray-700">Producto Destacado</span>
+          </label>
         </div>
-        <div>
-          <label className="block">Nuevas Imágenes:</label>
+
+        {/* Especificaciones del Producto */}
+        <div className="mb-4">
+          <label className="block text-gray-700">Especificaciones:</label>
+          {especificaciones.map((spec, index) => (
+            <div key={index} className="flex items-center mb-2">
+              <input
+                type="text"
+                placeholder="Clave"
+                value={spec.key}
+                onChange={(e) => handleSpecificationChange(index, 'key', e.target.value)}
+                className="w-1/2 p-2 border border-gray-300 rounded mr-2"
+              />
+              <input
+                type="text"
+                placeholder="Valor"
+                value={spec.value}
+                onChange={(e) => handleSpecificationChange(index, 'value', e.target.value)}
+                className="w-1/2 p-2 border border-gray-300 rounded mr-2"
+              />
+              {especificaciones.length > 1 && (
+                <button type="button" onClick={() => handleRemoveSpecification(index)} className="text-red-500">
+                  X
+                </button>
+              )}
+            </div>
+          ))}
+          <button type="button" onClick={handleAddSpecification} className="mt-2 bg-blue-500 text-white px-3 py-1 rounded">
+            Añadir Especificación
+          </button>
+        </div>
+
+        {/* Subir Nuevas Imágenes */}
+        <div className="mb-4">
+          <label className="block text-gray-700">Añadir Nuevas Imágenes:</label>
           <input
             type="file"
             multiple
             accept="image/*"
             onChange={handleImageChange}
-            className="w-full border p-2"
+            className="w-full"
           />
         </div>
-        {/* Opcional: Previsualización de Nuevas Imágenes */}
-        {nuevasImagenes.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-2">
-            {Array.from(nuevasImagenes).map((file, index) => (
-              <img
-                key={index}
-                src={URL.createObjectURL(file)}
-                alt={`Nueva Imagen ${index + 1}`}
-                className="w-24 h-24 object-cover rounded"
-              />
+        {/* Previsualización de Nuevas Imágenes */}
+        <div className="mb-4 flex flex-wrap">
+          {nuevasImagenes.map((file, index) => (
+            <img key={index} src={URL.createObjectURL(file)} alt={`Preview ${index}`} className="w-24 h-24 object-cover mr-2 mb-2" />
+          ))}
+        </div>
+        {/* Mostrar Imágenes Existentes con Opción de Eliminar */}
+        <div className="mb-4">
+          <label className="block text-gray-700">Imágenes Existentes:</label>
+          <div className="flex flex-wrap">
+            {imagenesExistentes.map((img, index) => (
+              <div key={index} className="relative">
+                <img src={`http://localhost:5000/${img}`} alt={`Existente ${index}`} className="w-24 h-24 object-cover mr-2 mb-2" />
+                <button
+                  type="button"
+                  onClick={() => handleEliminarImagen(img)}
+                  className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center"
+                >
+                  X
+                </button>
+              </div>
             ))}
           </div>
-        )}
-        <div className="flex justify-end space-x-2">
-          <button type="button" onClick={onCancel} className="bg-gray-500 text-white px-4 py-2 rounded">
+        </div>
+
+        {/* Botones */}
+        <div className="flex justify-end">
+          <button type="button" onClick={onCancel} className="mr-4 bg-gray-500 text-white px-4 py-2 rounded">
             Cancelar
           </button>
-          <button type="submit" className="bg-yellow-500 text-white px-4 py-2 rounded">
-            Actualizar Producto
+          <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">
+            Guardar Cambios
           </button>
         </div>
       </form>
