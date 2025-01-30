@@ -6,8 +6,8 @@ function Footer() {
   return (
     <footer className="bg-gradient-to-b from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {/* About Section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
+          {/* About Us */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Sobre Nosotros</h3>
             <p className="text-gray-600 dark:text-gray-400 text-sm">
@@ -52,6 +52,7 @@ function Footer() {
                   Mis Pedidos
                 </Link>
               </li>
+              
             </ul>
           </div>
 
@@ -60,17 +61,17 @@ function Footer() {
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Servicio al Cliente</h3>
             <ul className="space-y-2">
               <li>
-                <Link to="/faq" className="text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-300 text-sm">
+                <Link to="/" className="text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-300 text-sm">
                   Preguntas Frecuentes
                 </Link>
               </li>
               <li>
-                <Link to="/terms" className="text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-300 text-sm">
+                <Link to="/" className="text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-300 text-sm">
                   Términos y Condiciones
                 </Link>
               </li>
               <li>
-                <Link to="/privacy" className="text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-300 text-sm">
+                <Link to="/" className="text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-300 text-sm">
                   Política de Privacidad
                 </Link>
               </li>
@@ -95,10 +96,27 @@ function Footer() {
               </li>
             </ul>
           </div>
+
+          {/* Additional Links */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Cuenta</h3>
+            <ul className="space-y-2">
+              <li>
+                <Link to="/login" className="text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-300 text-sm">
+                  Iniciar Sesión
+                </Link>
+              </li>
+              <li>
+                <Link to="/register" className="text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-300 text-sm">
+                  Registrarse
+                </Link>
+              </li>
+            </ul>
+          </div>
         </div>
 
         {/* Copyright */}
-        <div className="mt-12 pt-8 border-t border-gray-300 dark:border-gray-700">
+        <div className="mt-6 pt-8 border-t border-gray-300 dark:border-gray-700">
           <p className="text-center text-gray-600 dark:text-gray-400 text-sm">
             © {new Date().getFullYear()} Tu Tienda. Todos los derechos reservados.
           </p>

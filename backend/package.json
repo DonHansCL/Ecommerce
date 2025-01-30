@@ -6,11 +6,13 @@
     "test": "jest --detectOpenHandles --forceExit",
     "test:watch": "jest --watch",
     "seed": "node seeders/dummyData.js",
-    "start": "node server.js" 
+    "start": "node server.js"
   },
   "jest": {
     "testEnvironment": "node",
-    "setupFilesAfterEnv": ["./_tests_/setup.js"]
+    "setupFilesAfterEnv": [
+      "./_tests_/setup.js"
+    ]
   },
   "keywords": [],
   "author": "",

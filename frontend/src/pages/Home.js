@@ -11,14 +11,14 @@ import Features from '../components/Features';
 
 function Home() {
   return (
-    <div className="container mx-auto p-4">
+    <div className=" ">
       <Banner />
       <Categories />
       <FeaturedProducts />
       {/* <Promotions /> */}
       <Testimonials />
       <Features />
-      <Footer/>
+     
     </div>
   );
 }

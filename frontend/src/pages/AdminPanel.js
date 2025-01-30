@@ -141,7 +141,7 @@ function AdminPanel() {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
+    <div className="flex min-h-screen bg-gray-100  admin-panel relative">
       {/* Sidebar */}
       <div className="w-64 bg-white shadow-md">
         <div className="p-6">

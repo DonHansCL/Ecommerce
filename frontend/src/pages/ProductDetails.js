@@ -14,28 +14,33 @@ function ProductDetails() {
   const [product, setProduct] = useState(null);
   const [selectedImage, setSelectedImage] = useState(0);
   const [cantidad, setCantidad] = useState(1);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const { addToCart } = useContext(CartContext);
   const navigate = useNavigate();
 
-  const fetchProduct = async () => {
-    try {
-      const res = await fetch(`http://localhost:5000/api/products/${id}`);
-      if (res.status === 404) {
-        setError('Producto no encontrado.');
-        return;
-      }
-      if (!res.ok) throw new Error('Error al obtener el producto.');
-      const data = await res.json();
-      setProduct(data);
-    } catch (err) {
-      setError(err.message);
-    }
-  };
-
   useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        const res = await fetch(`http://localhost:5000/api/products/${id}`);
+        if (!res.ok) throw new Error('Producto no encontrado.');
+        const data = await res.json();
+        setProduct(data);
+      } catch (err) {
+        console.error(err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchProduct();
   }, [id]);
+
+  if (loading) return <div className="text-center mt-8">Cargando detalles del producto...</div>;
+  if (error) return <div className="text-center text-red-500 mt-8">{error}</div>;
+  if (!product) return null;
+
 
   const handleAddToCart = async () => {
     if (cantidad < 1) {
@@ -161,38 +166,38 @@ function ProductDetails() {
               <p className="text-sm text-gray-600 mb-4">Compartir este producto:</p>
               <SocialShare product={product} />
             </div>
-            </div>
-    </div>
+          </div>
+        </div>
 
-            {/* Product description */}
-            <div className="mt-16">
-              <div className="border-t border-gray-200 pt-10">
-                <h3 className="text-2xl font-semibold text-gray-800 mb-4">Descripción del Producto</h3>
-                <div className="bg-white rounded-lg p-6 shadow-sm">
-                  <p className="text-gray-600 leading-relaxed">{product.descripcion}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Specifications */}
-            <div className="mt-6">
-              <div className=" border-gray-200 pt-10">
-                <Specifications specs={product.especificaciones} />
-              </div>
-            </div>
-
-            {/* Related Products */}
-            <div className="mt-6  border-gray-200 pt-10">
-              <RelatedProducts categoriaId={product.categoriaId} currentProductId={product.id} />
-            </div>
-
-            {/* Features */}
-            <div className="mt-6">
-              <Features />
+        {/* Product description */}
+        <div className="mt-16">
+          <div className="border-t border-gray-200 pt-10">
+            <h3 className="text-2xl font-semibold text-gray-800 mb-4">Descripción del Producto</h3>
+            <div className="bg-white rounded-lg p-6 shadow-sm">
+              <p className="text-gray-600 leading-relaxed">{product.descripcion}</p>
             </div>
           </div>
         </div>
-      
+
+        {/* Specifications */}
+        <div className="mt-6">
+          <div className=" border-gray-200 pt-10">
+            <Specifications specs={product.especificaciones} />
+          </div>
+        </div>
+
+        {/* Related Products */}
+        <div className="mt-6 border-t border-gray-200 pt-10">
+        <RelatedProducts categoriaId={product.categoriaId} currentProductId={product.id} />
+        </div>
+
+        {/* Features */}
+        <div className="mt-6">
+          <Features />
+        </div>
+      </div>
+    </div>
+
   );
 }
 

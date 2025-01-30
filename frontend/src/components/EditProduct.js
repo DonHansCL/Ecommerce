@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
 function EditProduct({ product, onSuccess, onCancel }) {
   const [nombre, setNombre] = useState(product.nombre);
@@ -18,11 +19,17 @@ function EditProduct({ product, onSuccess, onCancel }) {
       ? Object.entries(product.especificaciones).map(([key, value]) => ({ key, value }))
       : [{ key: '', value: '' }]
   );
+  const [isAddingProduct, setIsAddingProduct] = useState(false);
 
   // Obtener las categorías disponibles
   const fetchCategorias = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/categories');
+      const res = await fetch('http://localhost:5000/api/categories', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      if (!res.ok) throw new Error('No se pudieron cargar las categorías.');
       const data = await res.json();
       setCategorias(data);
     } catch (err) {
@@ -32,20 +39,21 @@ function EditProduct({ product, onSuccess, onCancel }) {
 
   useEffect(() => {
     fetchCategorias();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
-    setNuevasImagenes(files);
+    setNuevasImagenes((prev) => [...prev, ...files]);
   };
 
   const handleEliminarImagen = (imagenPath) => {
-    setImagenesAEliminar([...imagenesAEliminar, imagenPath]);
-    setImagenesExistentes(imagenesExistentes.filter(img => img !== imagenPath));
+    setImagenesAEliminar((prev) => [...prev, imagenPath]);
+    setImagenesExistentes((prev) => prev.filter((img) => img !== imagenPath));
   };
 
   const handleAddSpecification = () => {
-    setEspecificaciones([...especificaciones, { key: '', value: '' }]);
+    setEspecificaciones((prev) => [...prev, { key: '', value: '' }]);
   };
 
   const handleSpecificationChange = (index, field, value) => {
@@ -60,12 +68,37 @@ function EditProduct({ product, onSuccess, onCancel }) {
     setEspecificaciones(newSpecs);
   };
 
+  const onDragEnd = (result) => {
+    const { source, destination } = result;
+
+    // Si no hay destino, salir
+    if (!destination) return;
+
+    // Si la posición no ha cambiado, salir
+    if (
+      source.droppableId === destination.droppableId &&
+      source.index === destination.index
+    ) {
+      return;
+    }
+
+    // Reordenar las imágenes
+    const reorderedImages = Array.from(imagenesExistentes);
+    const [movedImage] = reorderedImages.splice(source.index, 1);
+    reorderedImages.splice(destination.index, 0, movedImage);
+
+    setImagenesExistentes(reorderedImages);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!nombre || !precio || !cantidadEnStock || !categoriaId) {
       setError('Por favor, completa todos los campos obligatorios.');
       return;
     }
+
+    setIsAddingProduct(true);
+    setError('');
 
     // Filtrar especificaciones válidas y convertir a objeto
     const filteredSpecs = especificaciones.reduce((acc, spec) => {
@@ -84,7 +117,9 @@ function EditProduct({ product, onSuccess, onCancel }) {
     formData.append('especificaciones', JSON.stringify(filteredSpecs)); // Enviar como string JSON
     formData.append('featured', featured);
     formData.append('imagenesAEliminar', JSON.stringify(imagenesAEliminar)); // Enviar imágenes a eliminar
-    nuevasImagenes.forEach(img => {
+    // Añadir el orden de las imágenes existentes
+    formData.append('imagenesExistentes', JSON.stringify(imagenesExistentes));
+    nuevasImagenes.forEach((img) => {
       formData.append('imagenes', img);
     });
 
@@ -103,18 +138,20 @@ function EditProduct({ product, onSuccess, onCancel }) {
         const errorData = await res.json();
         setError(errorData.error || 'Error al actualizar el producto.');
         toast.error(errorData.error || 'Error al actualizar el producto.');
+        setIsAddingProduct(false);
         return;
       }
-  
+
       const data = await res.json();
       toast.success('Producto editado exitosamente.');
       onSuccess();
     } catch (err) {
       setError(err.message);
       toast.error(err.message);
+    } finally {
+      setIsAddingProduct(false);
     }
   };
-  
 
   return (
     <div className="bg-white p-6 rounded shadow-md">
@@ -169,8 +206,10 @@ function EditProduct({ product, onSuccess, onCancel }) {
             required
           >
             <option value="">Selecciona una Categoría</option>
-            {categorias.map(cat => (
-              <option key={cat.id} value={cat.id}>{cat.nombre}</option>
+            {categorias.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.nombre}
+              </option>
             ))}
           </select>
         </div>
@@ -206,15 +245,70 @@ function EditProduct({ product, onSuccess, onCancel }) {
                 className="w-1/2 p-2 border border-gray-300 rounded mr-2"
               />
               {especificaciones.length > 1 && (
-                <button type="button" onClick={() => handleRemoveSpecification(index)} className="text-red-500">
+                <button
+                  type="button"
+                  onClick={() => handleRemoveSpecification(index)}
+                  className="text-red-500"
+                >
                   X
                 </button>
               )}
             </div>
           ))}
-          <button type="button" onClick={handleAddSpecification} className="mt-2 bg-blue-500 text-white px-3 py-1 rounded">
+          <button
+            type="button"
+            onClick={handleAddSpecification}
+            className="mt-2 bg-blue-500 text-white px-3 py-1 rounded"
+          >
             Añadir Especificación
           </button>
+        </div>
+
+        {/* Imágenes Existentes con Ordenamiento */}
+        <div className="mb-4">
+          <label className="block text-gray-700">Imágenes Existentes:</label>
+          <DragDropContext onDragEnd={onDragEnd}>
+            <Droppable droppableId="imagenes" direction="horizontal">
+              {(provided) => (
+                <div
+                  className="mt-2 flex space-x-4 overflow-x-auto"
+                  {...provided.droppableProps}
+                  ref={provided.innerRef}
+                >
+                  {imagenesExistentes.map((img, index) => {
+                    // Genera un ID único sin backslashes
+                    const safeDraggableId = `img-${index}-${img.replace(/\\/g, '/')}`;
+                    return (
+                      <Draggable key={safeDraggableId} draggableId={safeDraggableId} index={index}>
+                        {(provided) => (
+                          <div
+                            className="relative"
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                          >
+                            <img
+                              src={`http://localhost:5000/${img}`}
+                              alt={`Imagen ${index + 1}`}
+                              className="w-32 h-32 object-cover rounded-md"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleEliminarImagen(img)}
+                              className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1"
+                            >
+                              &times;
+                            </button>
+                          </div>
+                        )}
+                      </Draggable>
+                    );
+                  })}
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
+          </DragDropContext>
         </div>
 
         {/* Subir Nuevas Imágenes */}
@@ -231,35 +325,40 @@ function EditProduct({ product, onSuccess, onCancel }) {
         {/* Previsualización de Nuevas Imágenes */}
         <div className="mb-4 flex flex-wrap">
           {nuevasImagenes.map((file, index) => (
-            <img key={index} src={URL.createObjectURL(file)} alt={`Preview ${index}`} className="w-24 h-24 object-cover mr-2 mb-2" />
+            <div key={index} className="relative mr-2 mb-2">
+              <img
+                src={URL.createObjectURL(file)}
+                alt={`Preview ${index}`}
+                className="w-24 h-24 object-cover rounded-md"
+              />
+              <button
+                type="button"
+                onClick={() =>
+                  setNuevasImagenes((prev) => prev.filter((_, i) => i !== index))
+                }
+                className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center"
+              >
+                &times;
+              </button>
+            </div>
           ))}
-        </div>
-        {/* Mostrar Imágenes Existentes con Opción de Eliminar */}
-        <div className="mb-4">
-          <label className="block text-gray-700">Imágenes Existentes:</label>
-          <div className="flex flex-wrap">
-            {imagenesExistentes.map((img, index) => (
-              <div key={index} className="relative">
-                <img src={`http://localhost:5000/${img}`} alt={`Existente ${index}`} className="w-24 h-24 object-cover mr-2 mb-2" />
-                <button
-                  type="button"
-                  onClick={() => handleEliminarImagen(img)}
-                  className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center"
-                >
-                  X
-                </button>
-              </div>
-            ))}
-          </div>
         </div>
 
         {/* Botones */}
         <div className="flex justify-end">
-          <button type="button" onClick={onCancel} className="mr-4 bg-gray-500 text-white px-4 py-2 rounded">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="mr-4 bg-gray-500 text-white px-4 py-2 rounded"
+          >
             Cancelar
           </button>
-          <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">
-            Guardar Cambios
+          <button
+            type="submit"
+            className="bg-blue-500 text-white px-4 py-2 rounded"
+            disabled={isAddingProduct}
+          >
+            {isAddingProduct ? 'Guardando...' : 'Guardar Cambios'}
           </button>
         </div>
       </form>

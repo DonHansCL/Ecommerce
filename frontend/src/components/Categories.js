@@ -1,6 +1,7 @@
 // src/components/Categories.js
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { FiArrowRight } from 'react-icons/fi';
 
 function Categories() {
   const [categories, setCategories] = useState([]);
@@ -27,35 +28,55 @@ function Categories() {
   }, []);
 
   return (
-    <div className="my-8">
-      <h2 className="text-2xl font-semibold mb-4 text-center">Categorías Destacadas</h2>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
-        {error ? (
-          <p className="text-red-500">{error}</p>
-        ) : Array.isArray(categories) && categories.length > 0 ? (
-          categories.map(category => (
-            <Link to={`/categoria/${category.id}`} key={category.id} className="transform hover:scale-105 transition-transform duration-300">
-              <div className="bg-gray-100 p-4 rounded shadow hover:shadow-lg">
-              {category.imagen ? (
-                  <img 
-                    src={`${process.env.REACT_APP_API_URL}/uploads/categories/${category.imagen}`} 
-                    alt={category.nombre} 
-                    className="w-full h-32 object-cover mb-2 rounded" 
-                  />
-                ) : (
-                  <div className="w-full h-32 bg-gray-300 mb-2 rounded flex items-center justify-center">
-                    <span>No Image</span>
-                  </div>
-                )}
-                <h3 className="text-lg font-medium text-center">{category.nombre}</h3>
+    <section className="py-12 bg-gray-50">
+    <div className="container mx-auto px-4">
+      <h2 className="text-3xl font-semibold text-center text-gray-800 mb-8">Categorías</h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
+        {categories.map((category) => (
+          <Link
+            key={category.id}
+            to={`/catalog?category=${category.id}`}
+            className="group bg-white rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300 flex flex-col"
+          >
+            <div className="relative">
+              <img
+                src={`${process.env.REACT_APP_API_URL}/uploads/categories/${category.imagen}`}
+                alt={category.nombre}
+                className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+              <div className="absolute inset-0 bg-black bg-opacity-25 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                <FiArrowRight className="text-white text-3xl" />
               </div>
-            </Link>
-          ))
-        ) : (
-          <p>No hay categorías disponibles.</p>
-        )}
+            </div>
+            <div className="p-4 flex flex-col justify-between flex-1">
+              <h3 className="text-xl font-semibold text-gray-800 mb-2">{category.nombre}</h3>
+              <button className="mt-auto text-indigo-600 hover:text-indigo-800 font-medium flex items-center">
+                Ver más
+                <FiArrowRight className="ml-1" />
+              </button>
+            </div>
+          </Link>
+        ))}
       </div>
     </div>
+
+    {/* Loader Styles */}
+    <style jsx>{`
+      .loader {
+        border-top-color: #3498db;
+        animation: spinner 1.5s linear infinite;
+      }
+
+      @keyframes spinner {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+    `}</style>
+  </section>
   );
 }
 

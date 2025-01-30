@@ -1,8 +1,10 @@
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
-const { Category } = require('../models');
+const fs = require('fs');
+const { Category, Product } = require('../models');
 const authMiddleware = require('../middlewares/authMiddleware');
+const { Op } = require('sequelize');
 const router = express.Router();
 
 
@@ -82,6 +84,83 @@ router.get('/', async (req, res) => {
 
 /**
  * @swagger
+ * /categories/{categoriaId}/products:
+ *   get:
+ *     summary: Obtener productos de una categoría específica con opcional límite y exclusión de un producto
+ *     tags: [Products]
+ *     parameters:
+ *       - in: path
+ *         name: categoriaId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID de la categoría
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *         description: Número máximo de productos a retornar
+ *       - in: query
+ *         name: exclude
+ *         schema:
+ *           type: integer
+ *         description: ID del producto a excluir de los resultados
+ *     responses:
+ *       200:
+ *         description: Lista de productos relacionados
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Product'
+ *       500:
+ *         description: Error al obtener los productos relacionados
+ */
+
+// Obtener Productos Relacionados en una Categoría, Excluyendo un Producto y con Límite
+router.get('/:categoriaId/products', async (req, res) => {
+  try {
+    const { categoriaId } = req.params;
+    const { limit = 4, exclude } = req.query; // Default limit = 4
+
+    // Validar que categoriaId es un número
+    if (isNaN(categoriaId)) {
+      return res.status(400).json({ message: 'categoriaId debe ser un número.' });
+    }
+
+    // Si 'exclude' está presente, validarlo
+    if (exclude && isNaN(exclude)) {
+      return res.status(400).json({ message: 'exclude debe ser un número.' });
+    }
+
+    // Construir la cláusula WHERE
+    const whereClause = {
+      categoriaId: categoriaId
+    };
+
+    if (exclude) {
+      whereClause.id = { [Op.ne]: exclude };
+    }
+
+    const productos = await Product.findAll({
+      where: whereClause,
+      limit: parseInt(limit),
+      order: [['nombre', 'ASC']],
+      include: [{ model: Category, attributes: ['nombre'] }]
+    });
+
+    res.status(200).json(productos);
+  } catch (err) {
+    console.error('Error al obtener productos relacionados:', err);
+    res.status(500).json({ message: 'Error al obtener productos relacionados.', error: err.message });
+  }
+});
+
+
+
+/**
+ * @swagger
  * /categories:
  *   post:
  *     summary: Crear una nueva categoría (Solo Administradores)
@@ -121,7 +200,6 @@ router.get('/', async (req, res) => {
  *       500:
  *         description: Error al crear la categoría
  */
-
 
 
 // Crear una Nueva Categoría (Requiere Autenticación de Administrador)

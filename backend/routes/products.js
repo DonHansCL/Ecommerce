@@ -6,7 +6,7 @@ const fs = require('fs');
 const router = express.Router();
 const { Product, Category } = require('../models');
 const authMiddleware = require('../middlewares/authMiddleware');
-
+const { Op, fn, col, where } = require('sequelize');
 
 
 /**
@@ -87,8 +87,17 @@ const upload = multer({
 // Obtener Todos los Productos con Opcional Filtro por Categoría
 router.get('/', async (req, res) => {
   try {
-    const { categoria, featured } = req.query;
+    const { search, categoria, featured } = req.query;
     const whereClause = {};
+
+    if (search) {
+      whereClause.nombre = where(
+        fn('unaccent', col('Product.nombre')), // Especificar la tabla para evitar ambigüedad
+        {
+          [Op.iLike]: `%${search}%`, // Búsqueda insensible a mayúsculas/minúsculas y acentos
+        }
+      );
+    }
 
     if (categoria) {
       const category = await Category.findOne({ where: { id: categoria } });
@@ -112,6 +121,25 @@ router.get('/', async (req, res) => {
     res.status(500).json({ message: 'Error al obtener los productos.', error: err.message });
   }
 });
+
+
+//Ruta GET temporal para obtener todos los productos
+// router.get('/export', async (req, res) => {
+//   try {
+//     // Verificar si el usuario es administrador
+    
+
+//     const productos = await Product.findAll({
+//       include: [{ model: Category, attributes: ['nombre'] }],
+//     });
+
+//     res.json(productos);
+//   } catch (err) {
+//     console.error('Error al exportar productos:', err);
+//     res.status(500).json({ error: 'Error al exportar productos.', details: err.message });
+//   }
+// });
+
 
 
 
@@ -347,7 +375,7 @@ router.put('/:id', authMiddleware, upload.array('imagenes', 5), async (req, res)
     }
 
     const { id } = req.params;
-    const { nombre, descripcion, precio, cantidadEnStock, categoriaId, especificaciones, imagenesAEliminar, featured } = req.body;
+    const { nombre, descripcion, precio, cantidadEnStock, categoriaId, especificaciones, imagenesAEliminar, featured, imagenesExistentes } = req.body;
 
     const producto = await Product.findByPk(id);
     if (!producto) {
@@ -407,6 +435,12 @@ router.put('/:id', authMiddleware, upload.array('imagenes', 5), async (req, res)
           if (err) console.error(`Error al eliminar la imagen ${imgPath}:`, err);
         });
       });
+    }
+
+    // Reordenar imágenes existentes
+    if (imagenesExistentes) {
+      const existingImages = JSON.parse(imagenesExistentes);
+      producto.imagenes = existingImages.concat(producto.imagenes.filter(img => !existingImages.includes(img)));
     }
 
     await producto.save();
@@ -479,24 +513,5 @@ router.delete('/:id', authMiddleware, async (req, res) => {
   }
 });
 
-
-// Ruta GET temporal para obtener todos los productos
-router.get('/export', authMiddleware, async (req, res) => {
-  try {
-    // Verificar si el usuario es administrador
-    if (req.user.rol !== 'administrador') {
-      return res.status(403).json({ error: 'Acceso denegado.' });
-    }
-
-    const productos = await Product.findAll({
-      include: [{ model: Category, attributes: ['nombre'] }],
-    });
-
-    res.json(productos);
-  } catch (err) {
-    console.error('Error al exportar productos:', err);
-    res.status(500).json({ error: 'Error al exportar productos.', details: err.message });
-  }
-});
 
 module.exports = router;

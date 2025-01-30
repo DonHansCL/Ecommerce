@@ -38,8 +38,8 @@ function App() {
         <ToastContainer />
         <ScrollToTop />
         <div className="App">
-          <Navbar />
-          <div className="pt-14">
+          <Navbar />          
+          <div className="flex-grow pt-14">
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/catalog" element={<Catalog />} />
@@ -101,6 +101,7 @@ function App() {
 
             </Routes>
           </div>
+          <Footer />
         </div>
       </CartProvider>
     </AuthProvider>
